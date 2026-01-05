@@ -1,0 +1,166 @@
+/* ============================================================================
+   Vektori Memory - Design Tokens
+   Official Vektori color system: vibrant orange palette with premium feel
+   ============================================================================ */
+
+:root {
+  /* ========== Vektori Brand Colors ========== */
+
+  /* Brand - Orange Palette */
+  --brand-primary: #FF8204;
+  --brand-amber: #FFAD00;
+  --brand-deep: #FA530F;
+  --brand-gradient: linear-gradient(135deg, #FFAD00 0%, #FF8204 50%, #FA530F 85%, #DF0400 100%);
+  --brand-gradient-subtle: linear-gradient(135deg, rgba(255,173,0,0.08) 0%, rgba(255,130,4,0.12) 100%);
+
+  /* Neutrals - Dark Theme (60% of design) */
+  --color-bg-primary: #2D2D2D;
+  --color-bg-solid: #2D2D2D;
+  --color-surface: #3a3a3a;
+  --color-surface-elevated: #454545;
+  --color-surface-glass: rgba(58, 58, 58, 0.95);
+  --color-surface-muted: #353535;
+  --color-surface-highlight: #404040;
+  --color-surface-contrast: #3a3a3a;
+
+  /* Light backgrounds for contrast */
+  --color-bg-light: #FFF8F0;
+  
+  /* Typography - High Contrast */
+  --color-text-primary: #F5F5F5;
+  --color-text-secondary: #CCCCCC;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #1A1A1A;
+  --color-text-dark: #1A1A1A;
+
+  /* Accent - Primary Orange (30% of design) */
+  --color-accent: #FF8204;
+  --color-accent-hover: #FF9520;
+  --color-accent-light: rgba(255, 130, 4, 0.15);
+  --color-accent-glow: rgba(255, 130, 4, 0.4);
+  --color-accent-subtle: rgba(255, 130, 4, 0.12);
+  --color-accent-contrast: #FFAD00;
+
+  /* Secondary accent - Amber */
+  --color-accent-secondary: #FFAD00;
+  --color-accent-secondary-light: rgba(255, 173, 0, 0.15);
+
+  /* Accent - Teal for special highlights */
+  --accent-teal: #008B8B;
+  --accent-teal-light: rgba(0, 139, 139, 0.15);
+
+  /* Semantic */
+  --color-success: #4ade80;
+  --color-success-bg: rgba(74, 222, 128, 0.12);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.12);
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.12);
+  --color-info: #60a5fa;
+  --color-info-bg: rgba(96, 165, 250, 0.12);
+
+  /* Borders - Orange tinted */
+  --color-border-light: rgba(255, 130, 4, 0.2);
+  --color-border-medium: rgba(255, 130, 4, 0.35);
+  --color-border-dark: rgba(255, 130, 4, 0.5);
+
+  /* ========== Spacing Scale ========== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ========== Typography ========== */
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Courier New", monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 24px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ========== Border Radius ========== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* ========== Shadows & Elevation ========== */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.65);
+
+  --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 24px rgba(255, 130, 4, 0.5);
+  --shadow-card-soft: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 8px 28px rgba(255, 130, 4, 0.35);
+
+  /* Focus rings - Orange */
+  --focus-ring: 0 0 0 3px rgba(255, 130, 4, 0.3);
+  --focus-ring-error: 0 0 0 3px rgba(248, 113, 113, 0.3);
+
+  /* ========== Transitions ========== */
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 170ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========== Layout ========== */
+  --container-width: 320px;
+  --container-padding: var(--space-5);
+}
+
+/* ============================================================================
+   Dark Mode Tokens - Maintains Vektori Orange palette
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Maintain orange brand colors in dark mode */
+    --color-bg-primary: #2D2D2D;
+    --color-bg-solid: #2D2D2D;
+    --color-surface: #3a3a3a;
+    --color-surface-elevated: #454545;
+    --color-surface-glass: rgba(58, 58, 58, 0.95);
+    --color-surface-muted: #353535;
+    --color-surface-highlight: #404040;
+    --color-surface-contrast: #3a3a3a;
+
+    --color-text-primary: #F5F5F5;
+    --color-text-secondary: #CCCCCC;
+    --color-text-tertiary: #999999;
+    --color-text-inverse: #1A1A1A;
+
+    --color-accent: #FF8204;
+    --color-accent-hover: #FF9520;
+    --color-accent-light: rgba(255, 130, 4, 0.15);
+    --color-accent-glow: rgba(255, 130, 4, 0.4);
+    --color-accent-subtle: rgba(255, 130, 4, 0.12);
+    --color-accent-contrast: #FFAD00;
+    --color-accent-secondary: #FFAD00;
+    --color-accent-secondary-light: rgba(255, 173, 0, 0.15);
+
+    --color-border-light: rgba(255, 130, 4, 0.2);
+    --color-border-medium: rgba(255, 130, 4, 0.35);
+    --color-border-dark: rgba(255, 130, 4, 0.5);
+  }
+}

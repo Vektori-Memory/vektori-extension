@@ -1,0 +1,168 @@
+{
+  "manifest_version": 3,
+  "name": "Vektori Memory",
+  "version": "1.0.2",
+  "description": "Automatically save and search your AI conversations across ChatGPT, Claude, Gemini, Perplexity, and more.",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "identity",
+    "sidePanel"
+  ],
+  "oauth2": {
+    "client_id": "235998260489-oj36mtfek0bfn3rk2bm91ve7qmacp6e8.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel/panel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/chatgpt-parser.js",
+        "content/chatgpt-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/claude-parser.js",
+        "content/claude-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.perplexity.ai/search/*",
+        "https://www.perplexity.ai/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/perplexity-parser.js",
+        "content/perplexity-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/gemini-parser.js",
+        "content/gemini-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/deepseek-parser.js",
+        "content/deepseek-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://grok.com/*"
+      ],
+      "js": [
+        "shared/config.js",
+        "shared/api_client.js",
+        "shared/ui_helper.js",
+        "parsers/shared-utils.js",
+        "parsers/grok-parser.js",
+        "content/grok-content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://api.vektori.cloud/*",
+    "https://*.vektori.cloud/*",
+    "https://vektori-memory.vektori-cloud.workers.dev/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "styles/*",
+        "parsers/*",
+        "shared/*"
+      ],
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://www.perplexity.ai/*",
+        "https://chat.deepseek.com/*",
+        "https://grok.com/*"
+      ]
+    }
+  ]
+}

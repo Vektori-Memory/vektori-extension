@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vektori Search</title>
+    <link rel="stylesheet" href="panel.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h2>Search Memory</h2>
+        </header>
+        <main>
+            <!-- Search Mode Toggle -->
+            <div class="search-mode-toggle">
+                <button class="mode-btn active" data-mode="recall">Recall Context</button>
+                <button class="mode-btn" data-mode="keyword">Keyword Search</button>
+            </div>
+
+            <!-- Keyword Search Section -->
+            <div id="keywordSearchSection" class="search-section">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search by keyword..." autocomplete="off">
+                </div>
+                <div id="resultsContainer">
+                    <p class="result-meta">Enter at least 3 characters to search.</p>
+                </div>
+                <div id="loadMoreContainer" style="display: none;">
+                    <button id="loadMoreBtn" class="load-more-btn">Load More</button>
+                </div>
+            </div>
+
+            <!-- Recall Context Section -->
+            <div id="recallContextSection" class="search-section active">
+                <div class="recall-input-container">
+                    <textarea id="recallInput" class="recall-input" placeholder="What do you want to remember?"
+                        rows="3"></textarea>
+                    <button id="recallBtn" class="recall-btn">Recall Context</button>
+                </div>
+                <div id="recallResultsContainer">
+                    <p class="result-meta">Enter your query and click "Recall Context" to retrieve semantic memories.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- IMPORTANT: Load config.js before api_client.js -->
+    <script src="../shared/config.js"></script>
+    <script src="../shared/api_client.js"></script>
+    <script src="panel.js"></script>
+</body>
+
+</html>

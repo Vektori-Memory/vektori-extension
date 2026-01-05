@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vektori Memory</title>
+    <!-- Design tokens first, then component styles -->
+    <link rel="stylesheet" href="styles/tokens.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body>
+    <!-- Single root container - all views rendered here by popup.js -->
+    <div id="app-container" role="main"></div>
+
+    <!-- Scripts - IMPORTANT: Load config.js before api_client.js -->
+    <script src="shared/config.js"></script>
+    <script src="shared/api_client.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

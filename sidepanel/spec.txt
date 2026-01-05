@@ -1,0 +1,101 @@
+Feature Spec: Search Chat via Side Panel
+
+    Feature Name: Search Chat History
+    Status: In Progress
+    Owner: Alex
+
+1. Objective (Problem Statement)
+
+Users who save many conversations need an efficient way to find specific past conversations by keyword. The current extension has no interface for searching or viewing saved history. This feature introduces a dedicated search UI to solve this problem.
+
+2. Proposed Solution (User Experience)
+
+The user will initiate a search from the menu button injected on LLM chat pages. This will open a dedicated search interface in the browser's side panel, allowing them to search their entire conversation history without leaving their current page.
+
+User Journey:
+
+    The user is on an LLM website (e.g., gemini.google.com).
+
+    They click the injected "Vektori" menu button next to the prompt input.
+
+    They click the "Search Memory" option from the menu.
+
+    The Chrome Side Panel slides open from the right, displaying the Vektori search UI.
+
+    The user types a keyword (e.g., "Docker") into a search bar at the top of the side panel.
+
+    As they type, the list of results below the search bar updates dynamically, showing all conversations whose title or content matches the keyword.
+
+    Each result will display the conversation title, platform, and date.
+
+    (Future) Clicking a result could open a detailed view of that conversation.
+
+3. Technical Implementation Plan
+
+This feature requires changes to the frontend extension and the backend API.
+
+3.1 Frontend
+
+    manifest.json
+
+        Add the "sidePanel" permission.
+
+        Add the "side_panel" key, pointing its default_path to a new file: sidepanel/panel.html.
+
+    sidepanel/ (New Directory)
+
+        panel.html: A new HTML file containing the structure for the side panel UI, including an <input id="searchInput"> and a <div id="resultsContainer">.
+
+        panel.css: A new CSS file for styling the side panel UI.
+
+        panel.js: A new JavaScript file that will:
+
+            Listen for input events on the #searchInput.
+
+            On input, call a new searchChats function in the API client.
+
+            Receive results and dynamically render them into #resultsContainer.
+
+    content/*.js (e.g., gemini-content.js)
+
+        The "Search Memory" menu item's click listener will be updated to make a single API call: chrome.sidePanel.open().
+
+    shared/api_client.js
+
+        A new function, searchChats(searchTerm), will be created to handle making an authenticated POST request to the new backend endpoint.
+
+3.2 Backend
+
+    New API Endpoint: /api/search-chats
+
+        Method: POST
+
+        Authentication: Required (uses Depends(get_current_user)).
+
+        Request Body Model (SearchRequest): { "search_term": "string" }
+
+        Response Body Model: [ { "convo_id": "string", "title": "string", "platform": "string", "timestamp": "string" }, ... ]
+
+    backend/api_server.py
+
+        The new /api/search-chats endpoint function will be created.
+
+        It will validate the request, extract the search_term, and call a new function in supabase_client to execute the database query.
+
+    backend/supabase_client.py
+
+        A new function, search_conversations(user_id, search_term), will be created.
+
+        This function will execute a keyword-based SQL query against the PostgreSQL database.
+
+        The query will be case-insensitive (ILIKE) and search for the search_term in both the conversations.title field and the messages.text_content field (requiring a JOIN).
+
+        The query will be strictly filtered with WHERE user_id = ?.
+
+4. Out of Scope for this Version (v0)
+
+    This feature is for keyword search only. It will not use Qdrant or semantic vector search.
+
+    The search results will not be paginated. All results will be returned at once.
+
+    Clicking on a search result in the side panel will not do anything yet. The detailed conversation view is a future feature.

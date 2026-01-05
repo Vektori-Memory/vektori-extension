@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Vektori Memory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FFAD00 0%, #FF8204 50%, #FA530F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .welcome-subtitle {
+            color: #999;
+            font-size: 18px;
+        }
+
+        .user-greeting {
+            display: inline-block;
+            background: rgba(255, 130, 4, 0.1);
+            border: 1px solid rgba(255, 130, 4, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        .user-greeting span {
+            color: #FF8204;
+            font-weight: 500;
+        }
+
+        /* Quick Start Section */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #FF8204;
+            border-radius: 2px;
+        }
+
+        /* How It Works */
+        .steps {
+            display: grid;
+            gap: 16px;
+        }
+
+        .step {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 130, 4, 0.1);
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FF8204, #FA530F);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        /* Platform Cards */
+        .platforms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .platform-card {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .platform-card:hover {
+            border-color: rgba(255, 130, 4, 0.4);
+            background: #333;
+        }
+
+        .platform-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 8px;
+            opacity: 0.9;
+        }
+
+        .platform-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Tips */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .tip {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .tip-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 10px;
+            color: #FF8204;
+        }
+
+        .tip h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .tip p {
+            color: #999;
+            font-size: 13px;
+        }
+
+        /* CTA */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(255, 130, 4, 0.15), rgba(250, 83, 15, 0.1));
+            border: 1px solid rgba(255, 130, 4, 0.3);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-section h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .cta-section p {
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #FF8204;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .cta-btn:hover {
+            background: #e67504;
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #333;
+            margin-top: 48px;
+        }
+
+        .footer p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #FF8204;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .delay-4 {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        /* Beta Code Banner */
+        .beta-code-banner {
+            background: linear-gradient(135deg, rgba(255, 130, 4, 0.15), rgba(250, 83, 15, 0.2));
+            border: 2px solid rgba(255, 130, 4, 0.5);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .beta-code-label {
+            font-size: 14px;
+            color: #FF8204;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .beta-code-value {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #FFAD00 0%, #FF8204 50%, #FA530F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+        }
+
+        .beta-code-hint {
+            font-size: 13px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="welcome-header animate-in">
+            <div class="logo-wrap">
+                <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="translate(100, 100)">
+                        <path d="M -50 30 L -30 40 L 30 40 L 50 30 L 30 20 L -30 20 Z" fill="#FF8204" opacity="0.4" />
+                        <path d="M -45 5 L -25 15 L 25 15 L 45 5 L 25 -5 L -25 -5 Z" fill="#FF8204" opacity="0.7" />
+                        <path d="M -40 -20 L -20 -10 L 20 -10 L 40 -20 L 20 -30 L -20 -30 Z" fill="#FF8204"
+                            opacity="1" />
+                        <line x1="-30" y1="20" x2="-25" y2="-5" stroke="#FF8204" stroke-width="2" opacity="0.3" />
+                        <line x1="30" y1="20" x2="25" y2="-5" stroke="#FF8204" stroke-width="2" opacity="0.3" />
+                        <line x1="-25" y1="-5" x2="-20" y2="-30" stroke="#FF8204" stroke-width="2" opacity="0.3" />
+                        <line x1="25" y1="-5" x2="20" y2="-30" stroke="#FF8204" stroke-width="2" opacity="0.3" />
+                    </g>
+                </svg>
+                <span class="logo-text">Vektori Memory</span>
+            </div>
+            <h1 class="welcome-title">Welcome to Vektori Memory!</h1>
+            <p class="welcome-subtitle">Your AI conversations, remembered forever across all platforms.</p>
+
+            <!-- Dashboard Link - Top Priority -->
+            <a href="https://vektori.cloud/auth/login" target="_blank" class="cta-btn"
+                style="margin-top: 20px; display: inline-flex;">
+                Open Dashboard - Visualize Your Memory Graph
+            </a>
+            <p style="margin-top: 8px; font-size: 13px; color: #888;">Explore your memories as an interactive 3D graph,
+                brainstorm ideas, and more</p>
+
+            <!-- Beta Code Banner -->
+            <div class="beta-code-banner">
+                <div class="beta-code-label">Beta Access Code</div>
+                <div class="beta-code-value">BETA-SQUAD</div>
+                <p class="beta-code-hint">Enter this code in the extension popup to unlock full access</p>
+            </div>
+
+            <div class="user-greeting" id="userGreeting" style="display: none;">
+                Signed in as <span id="userName"></span>
+            </div>
+        </header>
+
+        <!-- The Problem We Solve -->
+        <section class="section animate-in delay-1">
+            <h2 class="section-title">No more re-explaining yourself</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">→</div>
+                    <div class="step-content">
+                        <h3>Your context, everywhere</h3>
+                        <p>Start a convo in ChatGPT, continue in Claude, refine in Gemini, they all know what you're
+                            working on.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">→</div>
+                    <div class="step-content">
+                        <h3>It just works</h3>
+                        <p>Chat normally. We capture relevant context in the background, your preferences, project
+                            details, coding style, decisions made.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">→</div>
+                    <div class="step-content">
+                        <h3>Smarter responses from day one</h3>
+                        <p>New chat? It already knows you prefer TypeScript, work on a React app called "Pulse", and
+                            like concise answers. (ask it to retrieve everything about you)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Supported Platforms -->
+        <section class="section animate-in delay-2">
+            <h2 class="section-title">Works with</h2>
+            <div class="platforms">
+                <div class="platform-card">
+
+                    <div class="platform-name">ChatGPT</div>
+                </div>
+                <div class="platform-card">
+
+                    <div class="platform-name">Claude</div>
+                </div>
+                <div class="platform-card">
+
+                    <div class="platform-name">Gemini</div>
+                </div>
+                <div class="platform-card">
+
+                    <div class="platform-name">Grok</div>
+                </div>
+                <div class="platform-card">
+
+                    <div class="platform-name">Perplexity</div>
+                </div>
+                <div class="platform-card">
+
+                    <div class="platform-name">DeepSeek</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real Workflows -->
+        <section class="section animate-in delay-3">
+            <h2 class="section-title">Works for how you actually use AI</h2>
+            <div class="tips-grid">
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6" />
+                        <polyline points="8 6 2 12 8 18" />
+                    </svg>
+                    <h4>Coding across tools</h4>
+                    <p>Debug in ChatGPT, get Claude's take, check docs with Perplexity ,all with shared context about
+                        your codebase.</p>
+                </div>
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    <h4>Long-running projects</h4>
+                    <p>Pick up where you left off, even weeks later. Your project context persists across sessions.</p>
+                </div>
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <h4>Zero setup</h4>
+                    <p>No prompts to paste, no "reminder" messages. Just chat, context flows automatically.</p>
+                </div>
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+                    </svg>
+                    <h4>Pro tip: Double-click</h4>
+                    <p>Double-click the Vektori button to instantly Summon Context into your prompt. Quick context, zero
+                        clicks in menus.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA - More Features -->
+        <div class="cta-section animate-in delay-4">
+            <h3>More Features on vektori.cloud</h3>
+            <p style="margin-bottom: 16px;">Click the Vektori icon in your browser toolbar to use the extension. Use
+                code <strong style="color: #FF8204;">BETA-SQUAD</strong> to unlock access.</p>
+            <div class="tips-grid" style="text-align: left; margin-bottom: 16px;">
+                <div class="tip">
+                    <h4>3D Memory Graph</h4>
+                    <p>Visualize all your memories as an interactive knowledge graph</p>
+                </div>
+                <div class="tip">
+                    <h4>Brainstorm Mode</h4>
+                    <p>Generate new ideas based on your saved context and conversations</p>
+                </div>
+                <div class="tip">
+                    <h4>Timeline View</h4>
+                    <p>Browse your AI conversations chronologically</p>
+                </div>
+                <div class="tip">
+                    <h4>Memory Clusters</h4>
+                    <p>Auto-organized topics from your conversations</p>
+                </div>
+            </div>
+            <a href="https://vektori.cloud/auth/login" target="_blank" class="cta-btn">
+                Explore Dashboard
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>
+                Questions? <a href="mailto:vektori.cloud@gmail.com">vektori.cloud@gmail.com</a> ·
+                <a href="https://vektori.cloud/privacy">Privacy</a> ·
+                <a href="https://vektori.cloud/terms">Terms</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="welcome.js"></script>
+</body>
+
+</html>

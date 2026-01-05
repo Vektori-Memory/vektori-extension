@@ -1,0 +1,40 @@
+{
+  "name": "vektori-memory-extension",
+  "version": "1.0.0",
+  "description": "Cross-LLM Memory Bridge - Save and search your AI conversations across ChatGPT, Claude, Gemini, Perplexity, DeepSeek, and Grok",
+  "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vektori-Memory/vektori-memory-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Vektori-Memory/vektori-memory-extension/issues"
+  },
+  "homepage": "https://vektori.cloud",
+  "keywords": [
+    "chrome-extension",
+    "browser-extension",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "perplexity",
+    "ai",
+    "llm",
+    "memory",
+    "conversation",
+    "search"
+  ],
+  "scripts": {
+    "test": "vitest run --config testing/config/vitest.config.ts",
+    "test:watch": "vitest --config testing/config/vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config testing/config/vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@vitest/coverage-v8": "^2.0.0",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

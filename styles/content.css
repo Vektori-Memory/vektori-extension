@@ -1,0 +1,577 @@
+/* ============================================================================
+   Vektori Memory Extension Content Styles
+   Official Vektori color system with vibrant orange palette
+   ============================================================================ */
+
+/* Memory Button */
+.vektori-memory-button {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #FFAD00 0%, #FF8204 50%, #FA530F 100%);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  box-shadow: 0 4px 12px rgba(255, 130, 4, 0.4);
+}
+
+.vektori-memory-button:hover {
+  background: linear-gradient(135deg, #FFAD00 0%, #FF8204 40%, #FA530F 85%, #DF0400 100%);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 130, 4, 0.5);
+}
+
+/* Memory Menu */
+.vektori-memory-menu {
+  position: fixed !important;
+  background-color: #2D2D2D;
+  border: 1px solid rgba(255, 130, 4, 0.3);
+  border-radius: 8px;
+  padding: 4px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 130, 4, 0.2);
+  z-index: 99999 !important;
+  min-width: 160px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.vektori-memory-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #F5F5F5;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.vektori-memory-item:hover {
+  background: linear-gradient(135deg, rgba(255, 173, 0, 0.15) 0%, rgba(255, 130, 4, 0.2) 100%);
+  color: #FFAD00;
+}
+
+.vektori-memory-item:active {
+  background: rgba(255, 130, 4, 0.25);
+}
+
+/* Search Modal */
+.vektori-search-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #2D2D2D;
+  border: 1px solid rgba(255, 130, 4, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 130, 4, 0.2);
+  z-index: 10001;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.vektori-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+}
+
+/* ============================================================================
+   Toast Notification System
+   Professional, accessible, and delightful feedback system
+   ============================================================================ */
+
+.vektori-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2147483647 !important;
+  /* Max z-index to ensure visibility above all platform UI */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 420px;
+}
+
+.vektori-toast {
+  pointer-events: auto;
+  background: #2D2D2D;
+  border-radius: 12px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 4px 16px rgba(255, 130, 4, 0.2);
+  min-width: 320px;
+  max-width: 420px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  backdrop-filter: blur(12px);
+  transform: translateX(450px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vektori-toast-enter {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.vektori-toast-exit {
+  transform: translateX(450px);
+  opacity: 0;
+}
+
+.vektori-toast-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  gap: 12px;
+  position: relative;
+}
+
+.vektori-toast-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.vektori-toast-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vektori-toast-message {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #F5F5F5;
+  font-weight: 500;
+  word-wrap: break-word;
+  padding-right: 8px;
+}
+
+.vektori-toast-dismiss {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: rgba(245, 245, 245, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: -2px -4px 0 0;
+}
+
+.vektori-toast-dismiss:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #F5F5F5;
+}
+
+.vektori-toast-dismiss:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Toast Types */
+.vektori-toast-info {
+  border-left: 4px solid #4A9EFF;
+}
+
+.vektori-toast-info .vektori-toast-icon {
+  color: #4A9EFF;
+}
+
+.vektori-toast-success {
+  border-left: 4px solid #34D399;
+}
+
+.vektori-toast-success .vektori-toast-icon {
+  color: #34D399;
+}
+
+.vektori-toast-warning {
+  border-left: 4px solid #FFAD00;
+}
+
+.vektori-toast-warning .vektori-toast-icon {
+  color: #FFAD00;
+}
+
+.vektori-toast-error {
+  border-left: 4px solid #FA530F;
+}
+
+.vektori-toast-error .vektori-toast-icon {
+  color: #FA530F;
+}
+
+.vektori-toast-loading {
+  border-left: 4px solid #FF8204;
+}
+
+.vektori-toast-loading .vektori-toast-icon {
+  color: #FF8204;
+}
+
+/* Progress Bar */
+.vektori-toast-progress {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.vektori-toast-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFAD00 0%, #FF8204 50%, #FA530F 100%);
+  width: 0%;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.vektori-toast-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+/* Loading Spinner Animation */
+.vektori-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .vektori-toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .vektori-toast {
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* Dark mode support (if site uses it) */
+@media (prefers-color-scheme: dark) {
+  .vektori-toast {
+    background: #1A1A1A;
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.15),
+      0 4px 16px rgba(255, 130, 4, 0.3);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .vektori-toast {
+    transition: opacity 0.1s ease;
+  }
+
+  .vektori-toast-enter {
+    transform: none;
+  }
+
+  .vektori-toast-exit {
+    transform: none;
+  }
+
+  .vektori-spinner {
+    animation: none;
+  }
+
+  .vektori-toast-progress-fill::after {
+    animation: none;
+  }
+}
+
+/* ============================================================================
+   Destination Picker Modal
+   Modal for selecting which AI chat to carry context to
+   ============================================================================ */
+
+.vektori-destination-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 2147483646;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.vektori-destination-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1A1A1A;
+  border: 1px solid rgba(255, 130, 4, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(255, 130, 4, 0.15);
+  z-index: 2147483647;
+  width: 90%;
+  max-width: 420px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.vektori-destination-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vektori-destination-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #F5F5F5;
+}
+
+.vektori-destination-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(245, 245, 245, 0.6);
+}
+
+.vektori-destination-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.vektori-destination-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 70px;
+}
+
+.vektori-destination-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.vektori-destination-item:active {
+  transform: translateY(0);
+}
+
+/* Platform-specific hover colors */
+.vektori-destination-item[data-destination="chatgpt"]:hover {
+  border-color: #10a37f;
+  box-shadow: 0 4px 20px rgba(16, 163, 127, 0.2);
+}
+
+.vektori-destination-item[data-destination="chatgpt"]:hover .vektori-destination-name {
+  color: #10a37f;
+}
+
+.vektori-destination-item[data-destination="claude"]:hover {
+  border-color: #cc785c;
+  box-shadow: 0 4px 20px rgba(204, 120, 92, 0.2);
+}
+
+.vektori-destination-item[data-destination="claude"]:hover .vektori-destination-name {
+  color: #cc785c;
+}
+
+.vektori-destination-item[data-destination="perplexity"]:hover {
+  border-color: #20808d;
+  box-shadow: 0 4px 20px rgba(32, 128, 141, 0.2);
+}
+
+.vektori-destination-item[data-destination="perplexity"]:hover .vektori-destination-name {
+  color: #20808d;
+}
+
+.vektori-destination-item[data-destination="grok"]:hover {
+  border-color: #1d9bf0;
+  box-shadow: 0 4px 20px rgba(29, 155, 240, 0.2);
+}
+
+.vektori-destination-item[data-destination="grok"]:hover .vektori-destination-name {
+  color: #1d9bf0;
+}
+
+.vektori-destination-item[data-destination="gemini"]:hover {
+  border-color: #8e7cc3;
+  box-shadow: 0 4px 20px rgba(142, 124, 195, 0.2);
+}
+
+.vektori-destination-item[data-destination="gemini"]:hover .vektori-destination-name {
+  color: #8e7cc3;
+}
+
+.vektori-destination-item[data-destination="deepseek"]:hover {
+  border-color: #4a90d9;
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.2);
+}
+
+.vektori-destination-item[data-destination="deepseek"]:hover .vektori-destination-name {
+  color: #4a90d9;
+}
+
+.vektori-destination-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #F5F5F5;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.vektori-destination-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vektori-destination-cancel {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(245, 245, 245, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vektori-destination-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.vektori-destination-copy-only {
+  padding: 10px 20px;
+  background: rgba(255, 130, 4, 0.15);
+  border: 1px solid rgba(255, 130, 4, 0.3);
+  border-radius: 8px;
+  color: #FF8204;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vektori-destination-copy-only:hover {
+  background: rgba(255, 130, 4, 0.25);
+  border-color: rgba(255, 130, 4, 0.5);
+}
+
+/* Current platform indicator */
+.vektori-destination-item.current-platform {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.vektori-destination-item.current-platform::after {
+  content: 'Current';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(245, 245, 245, 0.6);
+}
