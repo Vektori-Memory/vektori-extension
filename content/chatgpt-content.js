@@ -8,6 +8,11 @@
   }
 })();
 
+// Initialize analytics
+if (window.analytics) {
+  window.analytics.init({ debug: false });
+}
+
 // Register message listener FIRST, before anything else
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
@@ -704,11 +709,17 @@ if (window.vektoriExtensionLoaded) {
     switch (action) {
       case 'inject':
         console.log('inject button clicked');
+        if (window.analytics) {
+          window.analytics.capture('inject_button_clicked', { platform: 'chatgpt' });
+        }
         await injectContextIntoPrompt();
         break;
 
       case 'search':
         console.log('search button clicked');
+        if (window.analytics) {
+          window.analytics.capture('search_button_clicked', { platform: 'chatgpt' });
+        }
         chrome.runtime.sendMessage({
           action: 'openSidePanel'   // ← Background script listens for this
         }, (response) => {            // ← Callback receives response
@@ -722,6 +733,9 @@ if (window.vektoriExtensionLoaded) {
         break;
       case 'save_chat':
         console.log('save_chat clicked');
+        if (window.analytics) {
+          window.analytics.capture('save_chat_button_clicked', { platform: 'chatgpt' });
+        }
 
         if (!(await window.vektoriCheckAuth())) {
           return;
@@ -767,6 +781,9 @@ if (window.vektoriExtensionLoaded) {
         break;
       case 'carry_context':
         console.log('carry_context clicked');
+        if (window.analytics) {
+          window.analytics.capture('carry_context_button_clicked', { platform: 'chatgpt' });
+        }
 
         if (!(await window.vektoriCheckAuth())) {
           return;

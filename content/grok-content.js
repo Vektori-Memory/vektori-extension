@@ -7,6 +7,11 @@
   }
 })();
 
+// Initialize analytics
+if (window.analytics) {
+  window.analytics.init({ debug: false });
+}
+
 // Import the Grok parser
 if (window.vektoriExtensionLoaded) {
   // Already loaded, skip
@@ -422,11 +427,17 @@ if (window.vektoriExtensionLoaded) {
     switch (action) {
       case 'inject':
         console.log('inject button clicked');
+        if (window.analytics) {
+          window.analytics.capture('inject_button_clicked', { platform: 'grok' });
+        }
         await injectContextIntoPrompt();
         break;
 
       case 'search':
         console.log('search button clicked');
+        if (window.analytics) {
+          window.analytics.capture('search_button_clicked', { platform: 'grok' });
+        }
         chrome.runtime.sendMessage({
           action: 'openSidePanel'
         }, (response) => {
@@ -440,6 +451,9 @@ if (window.vektoriExtensionLoaded) {
 
       case 'save_chat':
         console.log('save_chat clicked');
+        if (window.analytics) {
+          window.analytics.capture('save_chat_button_clicked', { platform: 'grok' });
+        }
 
         if (!(await window.vektoriCheckAuth())) {
           return;
@@ -470,6 +484,9 @@ if (window.vektoriExtensionLoaded) {
 
       case 'carry_context':
         console.log('carry_context clicked');
+        if (window.analytics) {
+          window.analytics.capture('carry_context_button_clicked', { platform: 'grok' });
+        }
         if (!(await window.vektoriCheckAuth())) return;
         showDestinationPicker('grok');
         break;

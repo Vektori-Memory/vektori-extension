@@ -3,6 +3,11 @@
 // Keyword Search + Recall Context (Semantic Search)
 // ============================================================================
 
+// Initialize analytics
+if (window.analytics) {
+    window.analytics.init({ debug: false });
+}
+
 // Element references
 const searchInput = document.getElementById('searchInput');
 const resultsContainer = document.getElementById('resultsContainer');
@@ -133,6 +138,15 @@ async function handleSearch(searchTerm, isLoadMore = false) {
 
         // If no results at all
         if (!isLoadMore && conversations.length === 0) {
+            // Track search with no results
+            if (window.analytics) {
+                window.analytics.capture('search_performed', {
+                    has_results: false,
+                    result_count: 0,
+                    source: 'sidepanel',
+                    search_type: 'keyword'
+                });
+            }
             resultsContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">No results</div>
@@ -141,6 +155,16 @@ async function handleSearch(searchTerm, isLoadMore = false) {
             `;
             loadMoreContainer.style.display = 'none';
             return;
+        }
+
+        // Track successful keyword search
+        if (!isLoadMore && window.analytics) {
+            window.analytics.capture('search_performed', {
+                has_results: true,
+                result_count: conversations.length,
+                source: 'sidepanel',
+                search_type: 'keyword'
+            });
         }
 
         // Render results (append if loading more)
@@ -325,6 +349,16 @@ async function handleRecallContext(query) {
             currentRecallResult = response.context;
             const resultCount = response.results?.length || 0;
 
+            // Track successful recall
+            if (window.analytics) {
+                window.analytics.capture('search_performed', {
+                    has_results: true,
+                    result_count: resultCount,
+                    source: 'sidepanel',
+                    search_type: 'recall'
+                });
+            }
+
             recallResultsContainer.innerHTML = `
                 <div class="recall-result-card">
                     <div class="recall-result-header">
@@ -348,6 +382,17 @@ async function handleRecallContext(query) {
             }
         } else {
             currentRecallResult = null;
+
+            // Track recall with no results
+            if (window.analytics) {
+                window.analytics.capture('search_performed', {
+                    has_results: false,
+                    result_count: 0,
+                    source: 'sidepanel',
+                    search_type: 'recall'
+                });
+            }
+
             recallResultsContainer.innerHTML = `
                 <div class="recall-empty">
                     No memories found for this query. Try a different search or save more conversations.

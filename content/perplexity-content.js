@@ -7,6 +7,11 @@
   }
 })();
 
+// Initialize analytics
+if (window.analytics) {
+  window.analytics.init({ debug: false });
+}
+
 // Import the Perplexity parser
 let script = document.createElement('script');
 script.src = chrome.runtime.getURL('parsers/perplexity-parser.js');
@@ -653,11 +658,17 @@ async function handleMenuClick(e) {
   switch (action) {
     case 'inject':
       console.log('inject button clicked');
+      if (window.analytics) {
+        window.analytics.capture('inject_button_clicked', { platform: 'perplexity' });
+      }
       await injectContextIntoPrompt();
       break;
 
     case 'search':
       console.log('search button clicked');
+      if (window.analytics) {
+        window.analytics.capture('search_button_clicked', { platform: 'perplexity' });
+      }
       chrome.runtime.sendMessage({
         action: 'openSidePanel'
       }, (response) => {
@@ -671,6 +682,9 @@ async function handleMenuClick(e) {
 
     case 'save_chat':
       console.log('save_chat clicked');
+      if (window.analytics) {
+        window.analytics.capture('save_chat_button_clicked', { platform: 'perplexity' });
+      }
 
       if (!(await window.vektoriCheckAuth())) {
         return;
@@ -701,6 +715,9 @@ async function handleMenuClick(e) {
 
     case 'carry_context':
       console.log('carry_context clicked');
+      if (window.analytics) {
+        window.analytics.capture('carry_context_button_clicked', { platform: 'perplexity' });
+      }
       if (!(await window.vektoriCheckAuth())) return;
       showDestinationPicker('perplexity');
       break;

@@ -1,20 +1,22 @@
 # Vektori Memory
 
-**Cross-LLM Memory Bridge** — Save and search your AI conversations across ChatGPT, Claude, Gemini, Perplexity, DeepSeek, and Grok.
+Your personal AI memory across all chat platforms. Save and search conversations from ChatGPT, Claude, Gemini, Perplexity, DeepSeek, and Grok.
 
 ## Features
 
-- **Auto-save conversations** from 6 major AI platforms
-- **Semantic search** across all your saved conversations
-- **Context injection** — bring relevant memories into new chats
-- **Privacy-first** — authentication required, your data stays yours
+- Auto-save conversations from 6 major AI platforms
+- Semantic search across all your saved conversations  
+- Context injection to bring relevant memories into new chats
+- Privacy-first: your data is yours, authentication required
 
 ## Installation
 
 ### Chrome Web Store (Recommended)
-[Install from Chrome Web Store](https://chromewebstore.google.com/detail/vektori-memory/mmojfknfmidpndjbkakhbmcoghgfkgkg)
+
+**[Install Vektori Memory from Chrome Web Store](https://chromewebstore.google.com/detail/vektori-memory/mmojfknfmidpndjbkakhbmcoghgfkgkg?hl=en&authuser=0)**
 
 ### Manual Installation (Development)
+
 1. Clone this repository
 2. Open `chrome://extensions/` in Chrome
 3. Enable "Developer mode" (top right)
@@ -62,10 +64,11 @@ See [SECURITY.md](SECURITY.md) for our security policy.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE)
 
 ## Links
 
+- Chrome Web Store: [Install Extension](https://chromewebstore.google.com/detail/vektori-memory/mmojfknfmidpndjbkakhbmcoghgfkgkg?hl=en&authuser=0)
 - Website: [vektori.cloud](https://vektori.cloud)
-- Issues: [GitHub Issues](https://github.com/Vektori-Memory/vektori-memory-extension/issues)
-- Email: vektori.cloud@gmail.com
+- Issues: [GitHub Issues](https://github.com/Vektori-Memory/vektori-extension/issues)
+- Contact: vektori.cloud@gmail.com

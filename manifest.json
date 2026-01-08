@@ -45,6 +45,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/chatgpt-parser.js",
@@ -62,6 +63,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/claude-parser.js",
@@ -80,6 +82,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/perplexity-parser.js",
@@ -97,6 +100,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/gemini-parser.js",
@@ -114,6 +118,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/deepseek-parser.js",
@@ -131,6 +136,7 @@
       "js": [
         "shared/config.js",
         "shared/api_client.js",
+        "shared/analytics.js",
         "shared/ui_helper.js",
         "parsers/shared-utils.js",
         "parsers/grok-parser.js",

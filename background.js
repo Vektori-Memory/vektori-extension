@@ -5,7 +5,10 @@
 
 // Import the shared API client using importScripts (MV3 compatible)
 // IMPORTANT: Load config.js BEFORE api_client.js so CONFIG is available
-importScripts('shared/config.js', 'shared/api_client.js');
+importScripts('shared/config.js', 'shared/api_client.js', 'shared/analytics.js');
+
+// Initialize analytics
+self.analytics.init({ debug: false });
 
 // Now we can use: getValidToken, makeAuthenticatedRequest, clearAuth, API_BASE_URL
 // from self.apiClient (exported by api_client.js)
@@ -14,7 +17,14 @@ importScripts('shared/config.js', 'shared/api_client.js');
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "save_chat") {
         saveChatToAPI(message.chatData)
-            .then(result => sendResponse({ success: true, data: result }))
+            .then(result => {
+                self.analytics.capture('conversation_saved', {
+                    platform: message.chatData?.platform || message.chatData?.conversation?.platform || 'unknown',
+                    message_count: message.chatData?.messages?.length || 0,
+                    trigger: 'manual'
+                });
+                sendResponse({ success: true, data: result });
+            })
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true;
     }
@@ -72,12 +82,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     else if (message.action === "auto_save_chat") {
         autoSaveChatToAPI(message.chatData)
-            .then(result => sendResponse({ success: true, data: result }))
+            .then(result => {
+                self.analytics.capture('conversation_saved', {
+                    platform: message.chatData?.platform || message.chatData?.conversation?.platform || 'unknown',
+                    message_count: message.chatData?.messages?.length || 0,
+                    trigger: 'auto'
+                });
+                sendResponse({ success: true, data: result });
+            })
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true;
     }
     else if (message.action === "openSidePanel") {
         console.log("Background script received 'openSidePanel' message.");
+        self.analytics.capture('sidepanel_opened', {
+            source: sender.tab?.url ? new URL(sender.tab.url).hostname : 'unknown'
+        });
 
         // Get the ID of the tab that sent the message
         const tabId = sender.tab.id;
@@ -101,6 +121,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     else if (message.action === 'startGoogleSignIn') {
         startGoogleSignIn(sendResponse);
+        return true;
+    }
+
+    else if (message.action === 'track_event') {
+        // Allow content scripts to send analytics events
+        self.analytics.capture(message.eventName, message.properties || {});
+        sendResponse({ success: true });
         return true;
     }
 
@@ -228,23 +255,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     throw new Error(`Save failed: ${errorData.error || saveResponse.statusText}`);
                 }
 
-                // STEP 2: Wait for RAG processing (minimum 15s), then poll
-                console.log(`[Background] [CarryToDestination] Waiting 15s for RAG processing...`, logContext);
-                await new Promise(resolve => setTimeout(resolve, 15000));
+                const saveData = await saveResponse.json();
+                const savedConvoId = saveData.convo_id || convoId;
 
-                const contextEndpoint = `${self.apiClient.API_BASE_URL}/api/carry-context?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(convoId)}&platform=${encodeURIComponent(sourcePlatform)}`;
+                // STEP 2: Poll /processing-status until RAG pipeline completes
+                console.log(`[Background] [CarryToDestination] Step 2 - Polling for processing completion...`, logContext);
 
-                // Poll up to 5 more times (10s more, total max ~25s)
-                const MAX_RETRIES = 5;
-                const RETRY_DELAY_MS = 2000;
-                let data = null;
-                let lastError = null;
+                const MAX_PROCESSING_POLLS = 20;
+                const PROCESSING_POLL_DELAY_MS = 2000;
+                let processingComplete = false;
 
-                for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-                    console.log(`[Background] [CarryToDestination] Polling attempt ${attempt}/${MAX_RETRIES}`, logContext);
-
+                for (let poll = 1; poll <= MAX_PROCESSING_POLLS; poll++) {
                     try {
-                        const contextResponse = await fetch(contextEndpoint, {
+                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(sourcePlatform)}`;
+
+                        const statusResponse = await fetch(statusEndpoint, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -252,44 +277,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             }
                         });
 
-                        if (!contextResponse.ok) {
-                            const errorData = await contextResponse.json().catch(() => ({}));
-                            lastError = errorData.error || `HTTP ${contextResponse.status}`;
-                            console.warn(`[Background] [CarryToDestination] Attempt ${attempt} failed: ${lastError}`, logContext);
-                        } else {
-                            data = await contextResponse.json();
+                        if (statusResponse.ok) {
+                            const statusData = await statusResponse.json();
+                            console.log(`[Background] [CarryToDestination] Processing poll ${poll}/${MAX_PROCESSING_POLLS}:`, {
+                                ...logContext,
+                                processed: statusData.processed,
+                                facts: statusData.facts_count,
+                                sentences: statusData.sentences_count
+                            });
 
-                            // Check if we have MEANINGFUL data (facts or insights, not just summaries)
-                            const hasFacts = (data.facts?.length || 0) > 0;
-                            const hasInsights = (data.insights?.length || 0) > 0;
-                            const hasSentences = (data.representativeSentences?.length || 0) > 0;
-                            const hasGoodData = hasFacts || hasInsights || hasSentences;
-
-                            if (hasGoodData) {
-                                console.log(`[Background] [CarryToDestination] Data found on attempt ${attempt}`, {
-                                    ...logContext,
-                                    facts: data.facts?.length || 0,
-                                    insights: data.insights?.length || 0,
-                                    summaries: data.summaries?.length || 0,
-                                    sentences: data.representativeSentences?.length || 0
-                                });
-                                break; // Got data, exit loop
-                            } else {
-                                console.log(`[Background] [CarryToDestination] Attempt ${attempt}: No data yet, will retry...`, logContext);
+                            if (statusData.processed) {
+                                processingComplete = true;
+                                break;
                             }
                         }
-                    } catch (fetchError) {
-                        lastError = fetchError.message;
-                        console.warn(`[Background] [CarryToDestination] Attempt ${attempt} network error: ${fetchError.message}`, logContext);
+                    } catch (pollError) {
+                        console.warn(`[Background] [CarryToDestination] Status poll ${poll} error: ${pollError.message}`, logContext);
                     }
 
-                    // Wait before next retry (unless this was the last attempt)
-                    if (attempt < MAX_RETRIES) {
-                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+                    if (poll < MAX_PROCESSING_POLLS) {
+                        await new Promise(resolve => setTimeout(resolve, PROCESSING_POLL_DELAY_MS));
                     }
                 }
 
-                // Even if no data, proceed to open the tab (user can paste manually if needed)
+                if (!processingComplete) {
+                    console.warn(`[Background] [CarryToDestination] Processing timeout. Proceeding anyway...`, logContext);
+                }
+
+                // STEP 3: Fetch the carry context
+                console.log(`[Background] [CarryToDestination] Step 3 - Fetching carry context...`, logContext);
+
+                let data = null;
+                try {
+                    const contextResponse = await fetch(`${self.apiClient.API_BASE_URL}/api/carry-context`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            convo_id: savedConvoId,
+                            platform: sourcePlatform
+                        })
+                    });
+
+                    if (contextResponse.ok) {
+                        data = await contextResponse.json();
+                        console.log(`[Background] [CarryToDestination] Context retrieved`, {
+                            ...logContext,
+                            facts: data.facts?.length || 0,
+                            insights: data.insights?.length || 0,
+                            sentences: data.representativeSentences?.length || 0
+                        });
+                    }
+                } catch (fetchError) {
+                    console.warn(`[Background] [CarryToDestination] Context fetch error: ${fetchError.message}`, logContext);
+                }
+
                 const formattedContext = data?.formattedContext || '';
 
                 console.log(`[Background] [CarryToDestination] Step 3 - Storing context and opening tab`, logContext);
@@ -452,30 +497,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
 
                 const saveData = await saveResponse.json();
+                const savedConvoId = saveData.convo_id || convoId; // Use stable ID from backend
                 const saveTimeMs = Date.now() - startTime;
                 console.log(`[Background] [CarryContext] Chat saved successfully`, {
                     ...logContext,
                     saveTimeMs,
-                    savedConvoId: saveData.convo_id?.substring(0, 8)
+                    savedConvoId: savedConvoId?.substring(0, 8)
                 });
 
-                // STEP 2: Wait for RAG processing (minimum 15s), then poll
-                console.log(`[Background] [CarryContext] Waiting 15s for RAG processing...`, logContext);
-                await new Promise(resolve => setTimeout(resolve, 15000));
+                // STEP 2: Poll /processing-status until RAG pipeline completes
+                console.log(`[Background] [CarryContext] Step 2 - Polling for processing completion...`, logContext);
 
-                const contextEndpoint = `${self.apiClient.API_BASE_URL}/api/carry-context?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(convoId)}&platform=${encodeURIComponent(platform)}`;
+                const MAX_PROCESSING_POLLS = 20; // Max 40 seconds (20 * 2s)
+                const PROCESSING_POLL_DELAY_MS = 2000;
+                let processingComplete = false;
 
-                // Poll up to 5 more times (10s more, total max ~25s)
-                const MAX_RETRIES = 5;
-                const RETRY_DELAY_MS = 2000;
-                let data = null;
-                let lastError = null;
-
-                for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-                    console.log(`[Background] [CarryContext] Polling attempt ${attempt}/${MAX_RETRIES}`, logContext);
-
+                for (let poll = 1; poll <= MAX_PROCESSING_POLLS; poll++) {
                     try {
-                        const contextResponse = await fetch(contextEndpoint, {
+                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(platform)}`;
+
+                        const statusResponse = await fetch(statusEndpoint, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -483,46 +524,80 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             }
                         });
 
-                        if (!contextResponse.ok) {
-                            const errorData = await contextResponse.json().catch(() => ({}));
-                            lastError = errorData.error || `HTTP ${contextResponse.status}`;
-                            console.warn(`[Background] [CarryContext] Attempt ${attempt} failed: ${lastError}`, logContext);
-                        } else {
-                            data = await contextResponse.json();
+                        if (statusResponse.ok) {
+                            const statusData = await statusResponse.json();
+                            console.log(`[Background] [CarryContext] Processing poll ${poll}/${MAX_PROCESSING_POLLS}:`, {
+                                ...logContext,
+                                processed: statusData.processed,
+                                facts: statusData.facts_count,
+                                sentences: statusData.sentences_count
+                            });
 
-                            // Check if we have MEANINGFUL data (facts or insights, not just summaries)
-                            const hasFacts = (data.facts?.length || 0) > 0;
-                            const hasInsights = (data.insights?.length || 0) > 0;
-                            const hasSentences = (data.representativeSentences?.length || 0) > 0;
-                            const hasGoodData = hasFacts || hasInsights || hasSentences;
-
-                            if (hasGoodData) {
-                                console.log(`[Background] [CarryContext] Data found on attempt ${attempt}`, {
-                                    ...logContext,
-                                    facts: data.facts?.length || 0,
-                                    insights: data.insights?.length || 0,
-                                    summaries: data.summaries?.length || 0,
-                                    sentences: data.representativeSentences?.length || 0
-                                });
-                                break; // Got data, exit loop
-                            } else {
-                                console.log(`[Background] [CarryContext] Attempt ${attempt}: No data yet, will retry...`, logContext);
+                            if (statusData.processed) {
+                                processingComplete = true;
+                                console.log(`[Background] [CarryContext] Processing complete after ${poll * PROCESSING_POLL_DELAY_MS / 1000}s`, logContext);
+                                break;
                             }
+                        } else {
+                            console.warn(`[Background] [CarryContext] Status poll ${poll} failed: HTTP ${statusResponse.status}`, logContext);
                         }
-                    } catch (fetchError) {
-                        lastError = fetchError.message;
-                        console.warn(`[Background] [CarryContext] Attempt ${attempt} network error: ${fetchError.message}`, logContext);
+                    } catch (pollError) {
+                        console.warn(`[Background] [CarryContext] Status poll ${poll} error: ${pollError.message}`, logContext);
                     }
 
-                    // Wait before next retry (unless this was the last attempt)
-                    if (attempt < MAX_RETRIES) {
-                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+                    // Wait before next poll (unless last attempt)
+                    if (poll < MAX_PROCESSING_POLLS) {
+                        await new Promise(resolve => setTimeout(resolve, PROCESSING_POLL_DELAY_MS));
                     }
+                }
+
+                if (!processingComplete) {
+                    console.warn(`[Background] [CarryContext] Processing timeout after ${MAX_PROCESSING_POLLS * PROCESSING_POLL_DELAY_MS / 1000}s. Proceeding anyway...`, logContext);
+                }
+
+                // STEP 3: Fetch the carry context (should work first time now)
+                console.log(`[Background] [CarryContext] Step 3 - Fetching carry context...`, logContext);
+
+                const contextEndpoint = `${self.apiClient.API_BASE_URL}/api/carry-context`;
+                let data = null;
+                let lastError = null;
+
+                try {
+                    const contextResponse = await fetch(contextEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            convo_id: savedConvoId,
+                            platform: platform
+                        })
+                    });
+
+                    if (contextResponse.ok) {
+                        data = await contextResponse.json();
+                        console.log(`[Background] [CarryContext] Context retrieved successfully`, {
+                            ...logContext,
+                            facts: data.facts?.length || 0,
+                            insights: data.insights?.length || 0,
+                            summaries: data.summaries?.length || 0,
+                            sentences: data.representativeSentences?.length || 0
+                        });
+                    } else {
+                        const errorData = await contextResponse.json().catch(() => ({}));
+                        lastError = errorData.error || `HTTP ${contextResponse.status}`;
+                        console.warn(`[Background] [CarryContext] Context fetch failed: ${lastError}`, logContext);
+                    }
+                } catch (fetchError) {
+                    lastError = fetchError.message;
+                    console.error(`[Background] [CarryContext] Context fetch error: ${fetchError.message}`, logContext);
                 }
 
                 const totalTimeMs = Date.now() - startTime;
 
-                // Return whatever we have (even if empty after all retries)
+                // Return whatever we have
                 if (data) {
                     console.log(`[Background] [CarryContext] Success`, {
                         ...logContext,
@@ -535,8 +610,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     });
                     sendResponse({ success: true, data: data });
                 } else {
-                    console.error('[Background] [CarryContext] Failed after all retries', { ...logContext, lastError, totalTimeMs });
-                    sendResponse({ success: false, error: lastError || 'Failed to fetch context after multiple attempts' });
+                    console.error('[Background] [CarryContext] Failed to get context', { ...logContext, lastError, totalTimeMs });
+                    sendResponse({ success: false, error: lastError || 'Failed to fetch context' });
                 }
             } catch (error) {
                 const totalTimeMs = Date.now() - startTime;
@@ -609,6 +684,15 @@ function startGoogleSignIn(sendResponse) {
                         access_token: authData.access_token,
                         refresh_token: authData.refresh_token,
                         expires_at: authData.expires_at
+                    });
+
+                    // Track successful sign-in
+                    self.analytics.identify(authData.user.id, {
+                        email: authData.user.email,
+                        name: authData.user.name
+                    });
+                    self.analytics.capture('user_signed_in', {
+                        method: 'google'
                     });
 
                     // Open welcome page after successful sign-in
@@ -710,4 +794,20 @@ async function autoSaveChatToAPI(chatData) {
 
 chrome.tabs.onActivated.addListener(() => {
     chrome.sidePanel.setOptions({ enabled: false });
+});
+
+// ============================================================================
+// Extension Lifecycle Events (Install/Update tracking)
+// ============================================================================
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+        self.analytics.capture('extension_installed', {
+            version: chrome.runtime.getManifest().version
+        });
+    } else if (details.reason === 'update') {
+        self.analytics.capture('extension_updated', {
+            previous_version: details.previousVersion,
+            new_version: chrome.runtime.getManifest().version
+        });
+    }
 });
