@@ -257,9 +257,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 const saveData = await saveResponse.json();
                 const savedConvoId = saveData.convo_id || convoId;
+                const expectedMaxIndex = saveData.expected_max_index || 0;
 
                 // STEP 2: Poll /processing-status until RAG pipeline completes
-                console.log(`[Background] [CarryToDestination] Step 2 - Polling for processing completion...`, logContext);
+                console.log(`[Background] [CarryToDestination] Step 2 - Polling for processing completion...`, {
+                    ...logContext,
+                    expectedMaxIndex
+                });
 
                 const MAX_PROCESSING_POLLS = 20;
                 const PROCESSING_POLL_DELAY_MS = 2000;
@@ -267,7 +271,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 for (let poll = 1; poll <= MAX_PROCESSING_POLLS; poll++) {
                     try {
-                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(sourcePlatform)}`;
+                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(sourcePlatform)}&expected_index=${expectedMaxIndex}`;
 
                         const statusResponse = await fetch(statusEndpoint, {
                             method: 'GET',
@@ -498,15 +502,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 const saveData = await saveResponse.json();
                 const savedConvoId = saveData.convo_id || convoId; // Use stable ID from backend
+                const expectedMaxIndex = saveData.expected_max_index || 0;
                 const saveTimeMs = Date.now() - startTime;
                 console.log(`[Background] [CarryContext] Chat saved successfully`, {
                     ...logContext,
                     saveTimeMs,
-                    savedConvoId: savedConvoId?.substring(0, 8)
+                    savedConvoId: savedConvoId?.substring(0, 8),
+                    expectedMaxIndex
                 });
 
                 // STEP 2: Poll /processing-status until RAG pipeline completes
-                console.log(`[Background] [CarryContext] Step 2 - Polling for processing completion...`, logContext);
+                console.log(`[Background] [CarryContext] Step 2 - Polling for processing completion...`, {
+                    ...logContext,
+                    expectedMaxIndex
+                });
 
                 const MAX_PROCESSING_POLLS = 20; // Max 40 seconds (20 * 2s)
                 const PROCESSING_POLL_DELAY_MS = 2000;
@@ -514,7 +523,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 for (let poll = 1; poll <= MAX_PROCESSING_POLLS; poll++) {
                     try {
-                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(platform)}`;
+                        const statusEndpoint = `${self.apiClient.API_BASE_URL}/api/processing-status?user_id=${encodeURIComponent(userId)}&convo_id=${encodeURIComponent(savedConvoId)}&platform=${encodeURIComponent(platform)}&expected_index=${expectedMaxIndex}`;
 
                         const statusResponse = await fetch(statusEndpoint, {
                             method: 'GET',
