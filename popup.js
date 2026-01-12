@@ -178,6 +178,9 @@ const ICONS = {
     copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
         <rect x="9" y="2" width="6" height="4" rx="1" ry="1"/>
+    </svg>`,
+    key: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
     </svg>`
 };
 
@@ -197,7 +200,12 @@ let appState = {
     credits: null,
     inviteCodeError: '',
     waitlistJoined: false,
-    theme: 'dark' // 'dark' | 'light'
+    theme: 'dark', // 'dark' | 'light'
+    // MCP Keys state
+    mcpKeys: [],
+    mcpKeysLoading: false,
+    newMcpKey: null,
+    mcpKeyError: ''
 };
 
 function setState(updates, preserveScroll = true) {
@@ -589,6 +597,9 @@ function renderProfileTab() {
     const userInitials = getUserInitials(userName);
     const credits = appState.credits;
 
+    // MCP Keys section
+    const mcpKeysSection = renderMcpKeysSection();
+
     return `
         <div class="profile-view view">
             <div class="profile-header">
@@ -614,6 +625,8 @@ function renderProfileTab() {
                 </div>
             ` : ''}
             
+            ${mcpKeysSection}
+            
             <div class="profile-links">
                 <a href="https://vektori.cloud" target="_blank" rel="noopener noreferrer" class="profile-link-item">
                     <div class="profile-link-icon">${ICONS.globe}</div>
@@ -629,9 +642,9 @@ function renderProfileTab() {
             
             <div class="profile-legal">
                 <a href="https://x.com/vektorimemory" target="_blank" rel="noopener noreferrer" class="legal-link">@vektorimemory</a>
-                <span class="legal-divider">�</span>
+                <span class="legal-divider">•</span>
                 <a href="https://vektori.cloud/terms" target="_blank" rel="noopener noreferrer" class="legal-link">Terms</a>
-                <span class="legal-divider">�</span>
+                <span class="legal-divider">•</span>
                 <a href="https://vektori.cloud/privacy" target="_blank" rel="noopener noreferrer" class="legal-link">Privacy</a>
             </div>
             
@@ -646,6 +659,88 @@ function renderProfileTab() {
             </div>
         </div>
     `;
+}
+
+function renderMcpKeysSection() {
+    // Show newly generated key with copy button
+    const newKeyDisplay = appState.newMcpKey ? `
+        <div class="mcp-new-key-card">
+            <div class="mcp-new-key-header">
+                ${ICONS.checkCircle}
+                <span>Key Generated!</span>
+            </div>
+            <div class="mcp-key-value">
+                <code id="mcp-key-text">${appState.newMcpKey}</code>
+                <button id="copy-mcp-key-btn" class="mcp-copy-btn" title="Copy to clipboard">
+                    ${ICONS.copy}
+                </button>
+            </div>
+            <div class="mcp-key-warning">
+                Save this key now - you won't see it again!
+            </div>
+            <button id="dismiss-new-key-btn" class="mcp-dismiss-btn">Done</button>
+        </div>
+    ` : '';
+
+    // Error display
+    const errorDisplay = appState.mcpKeyError ? `
+        <div class="mcp-error">${escapeHtml(appState.mcpKeyError)}</div>
+    ` : '';
+
+    // Keys list - filter to only show active keys
+    const activeKeys = appState.mcpKeys.filter(key => key.is_active !== false);
+    const keysList = activeKeys.length > 0 ? `
+        <div class="mcp-keys-list">
+            ${activeKeys.map(key => `
+                <div class="mcp-key-item">
+                    <div class="mcp-key-info">
+                        <span class="mcp-key-name">${ICONS.key} ${escapeHtml(key.name || 'Default')}</span>
+                        <span class="mcp-key-meta">Created ${formatMcpDate(key.created_at)}${key.last_used_at ? ' • Used ' + formatMcpDate(key.last_used_at) : ''}</span>
+                    </div>
+                    <button class="mcp-revoke-btn" data-key-id="${key.id}">Revoke</button>
+                </div>
+            `).join('')}
+        </div>
+    ` : (appState.mcpKeysLoading ? '' : '<div class="mcp-no-keys">No keys yet</div>');
+
+    return `
+        <div class="mcp-keys-section">
+            <div class="mcp-section-header">
+                <div class="mcp-section-icon">${ICONS.key}</div>
+                <div class="mcp-section-info">
+                    <div class="mcp-section-title">MCP Keys</div>
+                    <div class="mcp-section-desc">Connect Claude Code, Cursor</div>
+                </div>
+            </div>
+            
+            ${errorDisplay}
+            ${newKeyDisplay}
+            
+            ${!appState.newMcpKey ? `
+                <button id="generate-mcp-key-btn" class="mcp-generate-btn" ${appState.mcpKeysLoading || appState.isProcessing ? 'disabled' : ''}>
+                    ${appState.isProcessing ? 'Generating...' : '+ Generate New Key'}
+                </button>
+            ` : ''}
+            
+            ${appState.mcpKeysLoading ? '<div class="mcp-loading">Loading keys...</div>' : keysList}
+        </div>
+    `;
+}
+
+function formatMcpDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
 }
 
 function renderInviteCodeView() {
@@ -787,6 +882,8 @@ function attachSignedInHandlers() {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
             setState({ activeTab: tabId, queryResults: null });
+            // Fetch MCP keys when navigating to profile tab
+            if (tabId === 'profile') fetchMcpKeys();
         });
     });
 
@@ -795,6 +892,7 @@ function attachSignedInHandlers() {
     if (profileBtn) {
         profileBtn.addEventListener('click', () => {
             setState({ activeTab: 'profile' });
+            fetchMcpKeys();
         });
     }
 
@@ -809,6 +907,7 @@ function attachSignedInHandlers() {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
             setState({ activeTab: tabId });
+            if (tabId === 'profile') fetchMcpKeys();
         });
     });
 
@@ -863,6 +962,31 @@ function attachSignedInHandlers() {
     if (importChatGPTBtn) {
         importChatGPTBtn.addEventListener('click', handleImportChatGPTMemory);
     }
+
+    // MCP Keys handlers
+    const generateKeyBtn = document.getElementById('generate-mcp-key-btn');
+    if (generateKeyBtn) {
+        generateKeyBtn.addEventListener('click', handleGenerateMcpKey);
+    }
+
+    const copyKeyBtn = document.getElementById('copy-mcp-key-btn');
+    if (copyKeyBtn) {
+        copyKeyBtn.addEventListener('click', handleCopyMcpKey);
+    }
+
+    const dismissKeyBtn = document.getElementById('dismiss-new-key-btn');
+    if (dismissKeyBtn) {
+        dismissKeyBtn.addEventListener('click', () => {
+            setState({ newMcpKey: null });
+        });
+    }
+
+    // Revoke key buttons
+    document.querySelectorAll('.mcp-revoke-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            handleRevokeMcpKey(btn.dataset.keyId);
+        });
+    });
 }
 
 function attachInviteCodeHandlers() {
@@ -918,6 +1042,12 @@ function attachErrorHandlers() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Initialize analytics first
+    if (window.analytics) {
+        await window.analytics.init({ debug: false });
+        window.analytics.capture('popup_opened');
+    }
+
     // Load saved theme first (before any rendering)
     loadTheme();
 
@@ -1015,6 +1145,90 @@ async function loadUserCredits() {
 }
 
 // ============================================================================
+// MCP KEYS API FUNCTIONS
+// ============================================================================
+
+async function fetchMcpKeys() {
+    if (!window.apiClient) return;
+    setState({ mcpKeysLoading: true, mcpKeyError: '' });
+
+    try {
+        const result = await window.apiClient.makeAuthenticatedRequest(
+            `${window.apiClient.API_BASE_URL}/api/user/mcp-keys`,
+            { method: 'GET' }
+        );
+        setState({ mcpKeys: result.keys || [], mcpKeysLoading: false });
+    } catch (error) {
+        console.error('[Popup] Error fetching MCP keys:', error);
+        setState({ mcpKeysLoading: false, mcpKeyError: 'Failed to load keys' });
+    }
+}
+
+async function handleGenerateMcpKey() {
+    if (!window.apiClient) return;
+    setState({ isProcessing: true, mcpKeyError: '' });
+
+    try {
+        const result = await window.apiClient.makeAuthenticatedRequest(
+            `${window.apiClient.API_BASE_URL}/api/user/mcp-key`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Default' })
+            }
+        );
+
+        if (result.key) {
+            setState({ newMcpKey: result.key, isProcessing: false });
+            // Refresh the keys list
+            fetchMcpKeys();
+        } else {
+            throw new Error('No key returned');
+        }
+    } catch (error) {
+        console.error('[Popup] Error generating MCP key:', error);
+        setState({ isProcessing: false, mcpKeyError: 'Failed to generate key' });
+    }
+}
+
+function handleCopyMcpKey() {
+    if (!appState.newMcpKey) return;
+
+    navigator.clipboard.writeText(appState.newMcpKey).then(() => {
+        const copyBtn = document.getElementById('copy-mcp-key-btn');
+        if (copyBtn) {
+            const originalHtml = copyBtn.innerHTML;
+            copyBtn.innerHTML = `${ICONS.checkCircle}`;
+            copyBtn.title = 'Copied!';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHtml;
+                copyBtn.title = 'Copy to clipboard';
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error('[Popup] Failed to copy:', err);
+        alert('Failed to copy key');
+    });
+}
+
+async function handleRevokeMcpKey(keyId) {
+    if (!window.apiClient || !keyId) return;
+    if (!confirm('Revoke this key? It will stop working immediately.')) return;
+
+    try {
+        await window.apiClient.makeAuthenticatedRequest(
+            `${window.apiClient.API_BASE_URL}/api/user/mcp-key/${keyId}`,
+            { method: 'DELETE' }
+        );
+        // Refresh the keys list
+        fetchMcpKeys();
+    } catch (error) {
+        console.error('[Popup] Error revoking MCP key:', error);
+        setState({ mcpKeyError: 'Failed to revoke key' });
+    }
+}
+
+// ============================================================================
 // ACTION HANDLERS
 // ============================================================================
 
@@ -1055,6 +1269,13 @@ async function handleGoogleSignIn() {
 async function handleSignOut() {
     try {
         setState({ isProcessing: true, statusMessage: 'Signing out...' });
+
+        // Track sign out
+        if (window.analytics) {
+            window.analytics.capture('user_signed_out');
+            await window.analytics.reset();
+        }
+
         await window.apiClient.clearAuth();
         setState({ view: 'signedOut', user: null, isProcessing: false, statusMessage: '' });
     } catch (error) {
@@ -1115,6 +1336,15 @@ async function handleQueryMemory(query) {
         const hasContext = result.context && result.context.length > 0 &&
             result.context !== 'NO_RELEVANT_CONTEXT' &&
             !result.context.includes('No relevant context');
+
+        // Track search event
+        if (window.analytics) {
+            window.analytics.capture('search_performed', {
+                has_results: hasContext,
+                result_count: result.results?.length || 0,
+                source: 'popup'
+            });
+        }
 
         if (result.metadata && result.metadata.creditsRemaining !== undefined) {
             setState({ credits: { ...appState.credits, balance: result.metadata.creditsRemaining } });
