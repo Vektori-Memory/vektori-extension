@@ -7,15 +7,12 @@
   }
 })();
 
-// Initialize analytics
-if (window.analytics) {
-  window.analytics.init({ debug: false });
-}
-
 // Import the Claude parser
 let script = document.createElement('script');
 script.src = chrome.runtime.getURL('parsers/claude-parser.js');
 document.documentElement.appendChild(script);
+
+// Note: auto-inject.js is bundled via manifest.json
 
 let observer;
 let buttonInjected = false;
@@ -56,7 +53,12 @@ function setInputValue(newValue) {
   if (!inputElement) return false;
 
   if (inputElement.tagName.toLowerCase() === "div") {
-    inputElement.innerHTML = newValue;
+    // Convert newlines to <p> tags for proper rich text formatting
+    const paragraphs = newValue.split('\n').map(line => {
+      if (line.trim() === '') return '<p><br></p>';
+      return `<p>${line}</p>`;
+    }).join('');
+    inputElement.innerHTML = paragraphs;
   } else if (inputElement.tagName.toLowerCase() === "p") {
     inputElement.textContent = newValue;
   } else {
@@ -93,9 +95,15 @@ async function injectContextIntoPrompt() {
     return;
   }
 
-  // VALIDATION 3: Same query as last time
-  if (currentInput === lastInjectedQuery) {
-    window.vektoriToast.info('This query was already processed');
+  // VALIDATION 3: Same query as last time - USE CACHE instead of blocking
+  if (currentInput === lastInjectedQuery && queryCache.has(currentInput)) {
+    console.log('Same query as last time, using cache');
+    const cachedContext = queryCache.get(currentInput);
+    if (cachedContext) {
+      const enhancedPrompt = `Just for context: only, take in account if relevent to user query: ${cachedContext}\n\n${currentInput}\n`;
+      setInputValue(enhancedPrompt);
+      window.vektoriToast.success('Context injected from cache ⚡');
+    }
     return;
   }
 
@@ -160,6 +168,20 @@ async function injectContextIntoPrompt() {
         });
         lastInjectedQuery = currentInput;
         lastInjectionTime = now;
+
+        // Check if credits are low and show warning
+        const creditsRemaining = result.metadata?.creditsRemaining;
+        if (creditsRemaining !== undefined && creditsRemaining !== null) {
+          if (creditsRemaining <= 10) {
+            setTimeout(() => {
+              window.vektoriToast.lowCredits(creditsRemaining, true);
+            }, 3500);
+          } else if (creditsRemaining <= 30) {
+            setTimeout(() => {
+              window.vektoriToast.lowCredits(creditsRemaining, false);
+            }, 3500);
+          }
+        }
       }
     } else {
       console.log('No context found');
@@ -484,20 +506,21 @@ async function handleMenuClick(e) {
   e.stopImmediatePropagation();
   const action = e.target.dataset.action;
 
+  // Track button click via background script (for PostHog analytics)
+  chrome.runtime.sendMessage({
+    action: 'track_event',
+    eventName: 'inpage_button_clicked',
+    properties: { button: action, platform: 'claude' }
+  });
+
   switch (action) {
     case 'inject':
       console.log('inject button clicked');
-      if (window.analytics) {
-        window.analytics.capture('inject_button_clicked', { platform: 'claude' });
-      }
       await injectContextIntoPrompt();
       break;
 
     case 'search':
       console.log('search button clicked');
-      if (window.analytics) {
-        window.analytics.capture('search_button_clicked', { platform: 'claude' });
-      }
       chrome.runtime.sendMessage({
         action: 'openSidePanel'
       }, (response) => {
@@ -511,9 +534,6 @@ async function handleMenuClick(e) {
 
     case 'save_chat':
       console.log('save_chat clicked');
-      if (window.analytics) {
-        window.analytics.capture('save_chat_button_clicked', { platform: 'claude' });
-      }
 
       if (!(await window.vektoriCheckAuth())) {
         return;
@@ -544,9 +564,6 @@ async function handleMenuClick(e) {
 
     case 'carry_context':
       console.log('carry_context clicked');
-      if (window.analytics) {
-        window.analytics.capture('carry_context_button_clicked', { platform: 'claude' });
-      }
 
       if (!(await window.vektoriCheckAuth())) {
         return;
@@ -1111,3 +1128,71 @@ async function checkForPendingContext() {
 // Check for pending carry context when page loads
 // Delay slightly to ensure input element and toast system are ready
 setTimeout(checkForPendingContext, 2000);
+
+// ============================================================================
+// AUTO-INJECT SETUP
+// ============================================================================
+
+// Initialize auto-inject immediately and keep retrying
+function initAutoInject() {
+  if (!window.VektoriAutoInject) {
+    return false; // Wait for retry
+  }
+
+  window.VektoriAutoInject.setup({
+    getInputElement: () => {
+      const selectors = [
+        'div.ProseMirror[contenteditable="true"]',
+        'div[contenteditable="true"].ProseMirror',
+        'fieldset div[contenteditable="true"]',
+        'div[contenteditable="true"]',
+        'textarea'
+      ];
+      for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el) return el;
+      }
+      return null;
+    },
+    getSendButton: () => {
+      const selectors = [
+        'button[aria-label="Send Message"]',
+        'button[aria-label="Send message"]',
+        'button[type="button"][aria-disabled="false"] svg',
+        'button[type="submit"]',
+        'fieldset button:last-child'
+      ];
+      for (const sel of selectors) {
+        let el = document.querySelector(sel);
+        if (el) {
+          if (el.tagName === 'svg' || el.tagName === 'SVG') {
+            el = el.closest('button');
+          }
+          if (el) return el;
+        }
+      }
+      return null;
+    },
+    getInputValue: getInputValue,
+    setInputValue: setInputValue,
+    toast: window.vektoriToast,
+    queryCache: queryCache,
+    platformName: 'Claude'
+  });
+  console.log('[Claude] Auto-inject setup complete');
+  return true;
+}
+
+// Try immediately
+if (!initAutoInject()) {
+  // Retry every 500ms until it works
+  const initInterval = setInterval(() => {
+    if (initAutoInject()) {
+      clearInterval(initInterval);
+    }
+  }, 500);
+
+  // Stop trying after 10 seconds
+  setTimeout(() => clearInterval(initInterval), 10000);
+}
+
