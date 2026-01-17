@@ -8,7 +8,7 @@
  * Strips injected context from user messages to prevent saving duplicate memory.
  * 
  * Handles multiple injection formats:
- * 1. Bullet-point context format: "* fact\n* fact\n\noriginal query"
+ * 1. Bullet-point context format: "Just for context...\n• fact\n• fact\n\noriginal query"
  * 2. Legacy "Context:" format: "Context: {context}\n\n{query}"
  * 3. Old format: "Memory, might or might not be relevent dont assume: {context}\n\n{query}"
  * 4. New format: "Just for context: only, take in account if relevent to user query:{context}\n\n{query}"
@@ -18,7 +18,16 @@
 function stripInjectedContext(text) {
     if (!text) return text;
 
-    // Pattern 1: New format
+    // Pattern 1: New format with bullet points
+    // Format: "Just for context: only, take in account if relevent to user query:\n• fact\n• fact\n\noriginal query"
+    const bulletFormatPattern = /^Just\s+for\s+context:\s*only,\s*take\s+in\s+account\s+if\s+rele[vV]ent\s+to\s+user\s+query:\s*\n([\s\S]*?)\n\n+(.+)$/is;
+    const bulletMatch = text.match(bulletFormatPattern);
+    if (bulletMatch && bulletMatch[2]) {
+        console.log('[Parser] Stripped "Just for context" bullet format from user message');
+        return bulletMatch[2].trim();
+    }
+
+    // Pattern 2: New format (legacy without bullets)
     // Format: "Just for context: only, take in account if relevent to user query:{context}\n\n{query}"
     const newFormatPattern = /^Just\s+for\s+context:\s*only,\s*take\s+in\s+account\s+if\s+rele[vV]ent\s+to\s+user\s+query:\s*(.+?)\n\n+(.+)$/is;
     const newFormatMatch = text.match(newFormatPattern);
@@ -27,10 +36,8 @@ function stripInjectedContext(text) {
         return newFormatMatch[2].trim();
     }
 
-    // Pattern 2: Bullet-point context at the beginning
-    // Format: "* fact\n* fact\n\noriginal query"
-    // The context typically contains bullet points with "* " or "- "
-    // and is followed by blank line(s) then the actual user query
+    // Pattern 3: Bullet-point context at the beginning (generic)
+    // Format: "• fact\n• fact\n\noriginal query" or "* fact\n* fact\n\noriginal query"
     if (text.match(/^[\s\n]*[*\-•]/)) {
         // Find the last occurrence of double newline (context separator)
         const parts = text.split(/\n\n+/);
@@ -52,7 +59,7 @@ function stripInjectedContext(text) {
         }
     }
 
-    // Pattern 3: Legacy "Context:" format
+    // Pattern 4: Legacy "Context:" format
     // Format: "Context: {context}\n\n{query}"
     if (text.toLowerCase().startsWith('context:')) {
         const contextMatch = text.match(/^context:\s*(.+?)\n\n+(.+)$/is);

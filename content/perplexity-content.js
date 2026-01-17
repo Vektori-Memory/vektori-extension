@@ -7,15 +7,12 @@
   }
 })();
 
-// Initialize analytics
-if (window.analytics) {
-  window.analytics.init({ debug: false });
-}
-
 // Import the Perplexity parser
 let script = document.createElement('script');
 script.src = chrome.runtime.getURL('parsers/perplexity-parser.js');
 document.documentElement.appendChild(script);
+
+// Note: auto-inject.js is bundled via manifest.json
 
 let observer;
 let buttonInjected = false;
@@ -195,9 +192,15 @@ async function injectContextIntoPrompt() {
     return;
   }
 
-  // VALIDATION 3: Same query as last time
-  if (currentInput === lastInjectedQuery) {
-    window.vektoriToast.info('This query was already processed');
+  // VALIDATION 3: Same query as last time - USE CACHE instead of blocking
+  if (currentInput === lastInjectedQuery && queryCache.has(currentInput)) {
+    console.log('Same query as last time, using cache');
+    const cachedContext = queryCache.get(currentInput);
+    if (cachedContext) {
+      const enhancedPrompt = `Just for context: only, take in account if relevent to user query: ${cachedContext}\n\n${currentInput}\n`;
+      setInputValue(enhancedPrompt);
+      window.vektoriToast.success('Context injected from cache ⚡');
+    }
     return;
   }
 
@@ -259,6 +262,20 @@ async function injectContextIntoPrompt() {
         });
         lastInjectedQuery = currentInput;
         lastInjectionTime = now;
+
+        // Check if credits are low and show warning
+        const creditsRemaining = result.metadata?.creditsRemaining;
+        if (creditsRemaining !== undefined && creditsRemaining !== null) {
+          if (creditsRemaining <= 10) {
+            setTimeout(() => {
+              window.vektoriToast.lowCredits(creditsRemaining, true);
+            }, 3500);
+          } else if (creditsRemaining <= 30) {
+            setTimeout(() => {
+              window.vektoriToast.lowCredits(creditsRemaining, false);
+            }, 3500);
+          }
+        }
       }
     } else {
       window.vektoriToast.update(loadingToastId, 'No relevant memories found for this query', {
@@ -655,20 +672,21 @@ async function handleMenuClick(e) {
   e.stopImmediatePropagation();
   const action = e.target.dataset.action;
 
+  // Track button click via background script (for PostHog analytics)
+  chrome.runtime.sendMessage({
+    action: 'track_event',
+    eventName: 'inpage_button_clicked',
+    properties: { button: action, platform: 'perplexity' }
+  });
+
   switch (action) {
     case 'inject':
       console.log('inject button clicked');
-      if (window.analytics) {
-        window.analytics.capture('inject_button_clicked', { platform: 'perplexity' });
-      }
       await injectContextIntoPrompt();
       break;
 
     case 'search':
       console.log('search button clicked');
-      if (window.analytics) {
-        window.analytics.capture('search_button_clicked', { platform: 'perplexity' });
-      }
       chrome.runtime.sendMessage({
         action: 'openSidePanel'
       }, (response) => {
@@ -682,9 +700,6 @@ async function handleMenuClick(e) {
 
     case 'save_chat':
       console.log('save_chat clicked');
-      if (window.analytics) {
-        window.analytics.capture('save_chat_button_clicked', { platform: 'perplexity' });
-      }
 
       if (!(await window.vektoriCheckAuth())) {
         return;
@@ -715,9 +730,6 @@ async function handleMenuClick(e) {
 
     case 'carry_context':
       console.log('carry_context clicked');
-      if (window.analytics) {
-        window.analytics.capture('carry_context_button_clicked', { platform: 'perplexity' });
-      }
       if (!(await window.vektoriCheckAuth())) return;
       showDestinationPicker('perplexity');
       break;
@@ -1177,3 +1189,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   return true;
 });
+
+// ============================================================================
+// AUTO-INJECT SETUP
+// ============================================================================
+
+setTimeout(() => {
+  if (window.VektoriAutoInject) {
+    window.VektoriAutoInject.setup({
+      getInputElement: getTextarea,
+      getSendButton: () => {
+        return document.querySelector('button[aria-label="Submit"]') ||
+          document.querySelector('button[type="submit"]') ||
+          document.querySelector('button[aria-label="Send"]');
+      },
+      getInputValue: getInputValue,
+      setInputValue: setInputValue,
+      toast: window.vektoriToast,
+      queryCache: queryCache,
+      platformName: 'Perplexity'
+    });
+    console.log('[Perplexity] Auto-inject initialized');
+  }
+}, 1500);

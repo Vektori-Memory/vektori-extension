@@ -7,11 +7,6 @@
   }
 })();
 
-// Initialize analytics
-if (window.analytics) {
-  window.analytics.init({ debug: false });
-}
-
 // Import the Grok parser
 if (window.vektoriExtensionLoaded) {
   // Already loaded, skip
@@ -19,6 +14,8 @@ if (window.vektoriExtensionLoaded) {
   let script = document.createElement('script');
   script.src = chrome.runtime.getURL('parsers/grok-parser.js');
   document.documentElement.appendChild(script);
+
+  // Note: auto-inject.js is bundled via manifest.json
 
   let observer;
   let buttonInjected = false;
@@ -111,9 +108,15 @@ if (window.vektoriExtensionLoaded) {
       return;
     }
 
-    // VALIDATION 3: Same query as last time
-    if (currentInput === lastInjectedQuery) {
-      window.vektoriToast.info('This query was already processed');
+    // VALIDATION 3: Same query as last time - USE CACHE instead of blocking
+    if (currentInput === lastInjectedQuery && queryCache.has(currentInput)) {
+      console.log('Same query as last time, using cache');
+      const cachedContext = queryCache.get(currentInput);
+      if (cachedContext) {
+        const enhancedPrompt = `Just for context: only, take in account if relevent to user query: ${cachedContext}\n\n${currentInput}\n`;
+        setInputValue(enhancedPrompt);
+        window.vektoriToast.success('Context injected from cache ⚡');
+      }
       return;
     }
 
@@ -175,6 +178,20 @@ if (window.vektoriExtensionLoaded) {
           });
           lastInjectedQuery = currentInput;
           lastInjectionTime = now;
+
+          // Check if credits are low and show warning
+          const creditsRemaining = result.metadata?.creditsRemaining;
+          if (creditsRemaining !== undefined && creditsRemaining !== null) {
+            if (creditsRemaining <= 10) {
+              setTimeout(() => {
+                window.vektoriToast.lowCredits(creditsRemaining, true);
+              }, 3500);
+            } else if (creditsRemaining <= 30) {
+              setTimeout(() => {
+                window.vektoriToast.lowCredits(creditsRemaining, false);
+              }, 3500);
+            }
+          }
         }
       } else {
         window.vektoriToast.update(loadingToastId, 'No relevant memories found for this query', {
@@ -424,20 +441,21 @@ if (window.vektoriExtensionLoaded) {
     e.stopImmediatePropagation();
     const action = e.target.dataset.action;
 
+    // Track button click via background script (for PostHog analytics)
+    chrome.runtime.sendMessage({
+      action: 'track_event',
+      eventName: 'inpage_button_clicked',
+      properties: { button: action, platform: 'grok' }
+    });
+
     switch (action) {
       case 'inject':
         console.log('inject button clicked');
-        if (window.analytics) {
-          window.analytics.capture('inject_button_clicked', { platform: 'grok' });
-        }
         await injectContextIntoPrompt();
         break;
 
       case 'search':
         console.log('search button clicked');
-        if (window.analytics) {
-          window.analytics.capture('search_button_clicked', { platform: 'grok' });
-        }
         chrome.runtime.sendMessage({
           action: 'openSidePanel'
         }, (response) => {
@@ -451,9 +469,6 @@ if (window.vektoriExtensionLoaded) {
 
       case 'save_chat':
         console.log('save_chat clicked');
-        if (window.analytics) {
-          window.analytics.capture('save_chat_button_clicked', { platform: 'grok' });
-        }
 
         if (!(await window.vektoriCheckAuth())) {
           return;
@@ -484,9 +499,6 @@ if (window.vektoriExtensionLoaded) {
 
       case 'carry_context':
         console.log('carry_context clicked');
-        if (window.analytics) {
-          window.analytics.capture('carry_context_button_clicked', { platform: 'grok' });
-        }
         if (!(await window.vektoriCheckAuth())) return;
         showDestinationPicker('grok');
         break;
@@ -975,5 +987,40 @@ if (window.vektoriExtensionLoaded) {
     }
     return true;
   });
+
+  // ============================================================================
+  // AUTO-INJECT SETUP
+  // ============================================================================
+
+  setTimeout(() => {
+    if (window.VektoriAutoInject) {
+      window.VektoriAutoInject.setup({
+        getInputElement: () => {
+          const selectors = [
+            'textarea[data-placeholder="What do you want to know?"]',
+            'textarea[dir="auto"][spellcheck="false"]',
+            'div[contenteditable="true"]',
+            'textarea'
+          ];
+          for (const sel of selectors) {
+            const el = document.querySelector(sel);
+            if (el) return el;
+          }
+          return null;
+        },
+        getSendButton: () => {
+          return document.querySelector('button[type="submit"]') ||
+            document.querySelector('button[aria-label="Send"]') ||
+            document.querySelector('button[aria-label="Send message"]');
+        },
+        getInputValue: getInputValue,
+        setInputValue: setInputValue,
+        toast: window.vektoriToast,
+        queryCache: queryCache,
+        platformName: 'Grok'
+      });
+      console.log('[Grok] Auto-inject initialized');
+    }
+  }, 1500);
 
 }

@@ -12,6 +12,25 @@ if (window.analytics) {
   window.analytics.init({ debug: false });
 }
 
+// Format context as clean bullet points
+function formatContextAsBullets(contextString) {
+  if (!contextString || !contextString.trim()) return '';
+  
+  // Split by newlines and filter out empty lines
+  const lines = contextString.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+  
+  // If already has bullet points, return as-is with header
+  if (contextString.includes('•') || contextString.includes('*')) {
+    return `Just for context: only, take in account if relevent to user query:\n${contextString}`;
+  }
+  
+  // Otherwise format as bullet points
+  const bullets = lines.map(line => `• ${line}`).join('\n');
+  return `Just for context: only, take in account if relevent to user query:\n${bullets}`;
+}
+
 // Import the DeepSeek parser
 let script = document.createElement('script');
 script.src = chrome.runtime.getURL('parsers/deepseek-parser.js');
@@ -110,7 +129,8 @@ async function injectContextIntoPrompt() {
   if (queryCache.has(currentInput)) {
     const cachedContext = queryCache.get(currentInput);
     if (cachedContext) {
-      const enhancedPrompt = `Just for context: only, take in account if relevent to user query: ${cachedContext}\n\n${currentInput}\n`;
+      const formattedContext = formatContextAsBullets(cachedContext);
+      const enhancedPrompt = `${formattedContext}\n\n${currentInput}`;
       setInputValue(enhancedPrompt);
       window.vektoriToast.success('Context injected from cache ⚡');
       lastInjectedQuery = currentInput;
@@ -148,7 +168,8 @@ async function injectContextIntoPrompt() {
         queryCache.delete(firstKey);
       }
 
-      const enhancedPrompt = `Just for context: only, take in account if relevent to user query: ${result.context}\n\n${currentInput}\n`;
+      const formattedContext = formatContextAsBullets(result.context);
+      const enhancedPrompt = `${formattedContext}\n\n${currentInput}`;
 
       const success = setInputValue(enhancedPrompt);
       if (success) {

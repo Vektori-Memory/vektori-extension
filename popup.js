@@ -181,6 +181,13 @@ const ICONS = {
     </svg>`,
     key: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+    </svg>`,
+    gift: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+        <rect x="2" y="7" width="20" height="5"></rect>
+        <line x1="12" y1="22" x2="12" y2="7"></line>
+        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
     </svg>`
 };
 
@@ -192,6 +199,7 @@ let appState = {
     activeTab: 'home', // 'home' | 'search' | 'import' | 'profile'
     user: null,
     autoSaveEnabled: false,
+    autoInjectEnabled: true, // Auto-inject context on Enter (default: true)
     statusMessage: '',
     errorMessage: '',
     isProcessing: false,
@@ -205,7 +213,11 @@ let appState = {
     mcpKeys: [],
     mcpKeysLoading: false,
     newMcpKey: null,
-    mcpKeyError: ''
+    mcpKeyError: '',
+    // Referral state
+    referralCode: null,
+    referralStats: null,
+    referralLoading: false
 };
 
 function setState(updates, preserveScroll = true) {
@@ -442,9 +454,46 @@ function renderHomeTab() {
         </div>
     ` : '';
 
+    // Low credits warning banner
+    let lowCreditsWarning = '';
+    if (credits && credits.balance !== Infinity && credits.tier !== 'pro') {
+        if (credits.balance <= 10) {
+            lowCreditsWarning = `
+                <div class="low-credits-banner critical">
+                    <div class="low-credits-content">
+                        <span class="low-credits-icon">${ICONS.alertCircle}</span>
+                        <div class="low-credits-text">
+                            <strong>Credits critically low!</strong>
+                            <span>Only ${credits.balance} credits remaining</span>
+                        </div>
+                    </div>
+                    <button class="low-credits-cta" data-action="open-billing">
+                        Get More Credits →
+                    </button>
+                </div>
+            `;
+        } else if (credits.balance <= 30) {
+            lowCreditsWarning = `
+                <div class="low-credits-banner warning">
+                    <div class="low-credits-content">
+                        <span class="low-credits-icon">${ICONS.alertCircle}</span>
+                        <div class="low-credits-text">
+                            <strong>Running low on credits</strong>
+                            <span>${credits.balance} credits remaining</span>
+                        </div>
+                    </div>
+                    <button class="low-credits-cta" data-action="open-billing">
+                        Get More →
+                    </button>
+                </div>
+            `;
+        }
+    }
+
     return `
         <div class="home-view view">
             ${statusBanner}
+            ${lowCreditsWarning}
             
             <div class="home-header-compact">
                 ${creditBadge}
@@ -459,6 +508,17 @@ function renderHomeTab() {
                     </div>
                 </div>
                 <input type="checkbox" id="auto-save-toggle" class="toggle-switch" ${appState.autoSaveEnabled ? 'checked' : ''}>
+            </div>
+            
+            <div class="toggle-card">
+                <div class="toggle-info">
+                    <div class="toggle-icon-wrapper">${ICONS.zap}</div>
+                    <div class="toggle-text">
+                        <div class="toggle-title">Auto Inject</div>
+                        <div class="toggle-hint">Add context on Enter</div>
+                    </div>
+                </div>
+                <input type="checkbox" id="auto-inject-toggle" class="toggle-switch" ${appState.autoInjectEnabled ? 'checked' : ''}>
             </div>
             
             <div class="action-list">
@@ -600,6 +660,9 @@ function renderProfileTab() {
     // MCP Keys section
     const mcpKeysSection = renderMcpKeysSection();
 
+    // Referral section
+    const referralSection = renderReferralSection();
+
     return `
         <div class="profile-view view">
             <div class="profile-header">
@@ -615,7 +678,7 @@ function renderProfileTab() {
                     <div class="credit-header">
                         <div>
                             <div class="credit-label">Credits</div>
-                            <div class="credit-value">${credits.balance === Infinity ? '8' : credits.balance}</div>
+                            <div class="credit-value">${credits.balance === Infinity ? '∞' : credits.balance}</div>
                         </div>
                         <div class="credit-tier">
                             <div class="tier-label">Tier</div>
@@ -624,6 +687,8 @@ function renderProfileTab() {
                     </div>
                 </div>
             ` : ''}
+            
+            ${referralSection}
             
             ${mcpKeysSection}
             
@@ -723,6 +788,61 @@ function renderMcpKeysSection() {
             ` : ''}
             
             ${appState.mcpKeysLoading ? '<div class="mcp-loading">Loading keys...</div>' : keysList}
+        </div>
+    `;
+}
+
+function renderReferralSection() {
+    const referralCode = appState.referralCode;
+    const stats = appState.referralStats;
+
+    // Loading state
+    if (appState.referralLoading) {
+        return `
+            <div class="referral-section">
+                <div class="referral-loading">Loading referral code...</div>
+            </div>
+        `;
+    }
+
+    // Show code and stats if loaded
+    const codeDisplay = referralCode ? `
+        <div class="referral-code-display">
+            <code class="referral-code">${referralCode}</code>
+            <button id="copy-referral-code-btn" class="referral-copy-btn" title="Copy code">
+                ${ICONS.copy}
+            </button>
+        </div>
+    ` : `
+        <button id="generate-referral-code-btn" class="referral-generate-btn">
+            Get Your Referral Code
+        </button>
+    `;
+
+    const statsDisplay = stats ? `
+        <div class="referral-stats">
+            <div class="referral-stat">
+                <span class="stat-value">${stats.totalReferrals || 0}</span>
+                <span class="stat-label">Referrals</span>
+            </div>
+            <div class="referral-stat">
+                <span class="stat-value">${stats.totalCreditsEarned || 0}</span>
+                <span class="stat-label">Credits Earned</span>
+            </div>
+        </div>
+    ` : '';
+
+    return `
+        <div class="referral-section">
+            <div class="referral-header">
+                <div class="referral-icon">${ICONS.gift}</div>
+                <div class="referral-info">
+                    <div class="referral-title">Refer & Earn</div>
+                    <div class="referral-desc">Get 50 credits per friend who joins!</div>
+                </div>
+            </div>
+            ${codeDisplay}
+            ${statsDisplay}
         </div>
     `;
 }
@@ -882,8 +1002,11 @@ function attachSignedInHandlers() {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
             setState({ activeTab: tabId, queryResults: null });
-            // Fetch MCP keys when navigating to profile tab
-            if (tabId === 'profile') fetchMcpKeys();
+            // Fetch MCP keys and referral code when navigating to profile tab
+            if (tabId === 'profile') {
+                fetchMcpKeys();
+                fetchReferralCode();
+            }
         });
     });
 
@@ -893,6 +1016,7 @@ function attachSignedInHandlers() {
         profileBtn.addEventListener('click', () => {
             setState({ activeTab: 'profile' });
             fetchMcpKeys();
+            fetchReferralCode();
         });
     }
 
@@ -907,7 +1031,17 @@ function attachSignedInHandlers() {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
             setState({ activeTab: tabId });
-            if (tabId === 'profile') fetchMcpKeys();
+            if (tabId === 'profile') {
+                fetchMcpKeys();
+                fetchReferralCode();
+            }
+        });
+    });
+
+    // Low credits billing button (CSP-safe event listener)
+    document.querySelectorAll('[data-action="open-billing"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            window.open('https://vektori.cloud/dashboard/billing', '_blank');
         });
     });
 
@@ -916,6 +1050,14 @@ function attachSignedInHandlers() {
     if (autoSaveToggle) {
         autoSaveToggle.addEventListener('change', (e) => {
             handleAutoSaveToggle(e.target.checked);
+        });
+    }
+
+    // Auto-inject toggle
+    const autoInjectToggle = document.getElementById('auto-inject-toggle');
+    if (autoInjectToggle) {
+        autoInjectToggle.addEventListener('change', (e) => {
+            handleAutoInjectToggle(e.target.checked);
         });
     }
 
@@ -987,6 +1129,17 @@ function attachSignedInHandlers() {
             handleRevokeMcpKey(btn.dataset.keyId);
         });
     });
+
+    // Referral handlers
+    const generateReferralBtn = document.getElementById('generate-referral-code-btn');
+    if (generateReferralBtn) {
+        generateReferralBtn.addEventListener('click', fetchReferralCode);
+    }
+
+    const copyReferralBtn = document.getElementById('copy-referral-code-btn');
+    if (copyReferralBtn) {
+        copyReferralBtn.addEventListener('click', handleCopyReferralCode);
+    }
 }
 
 function attachInviteCodeHandlers() {
@@ -1054,6 +1207,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     setState({ view: 'loading', statusMessage: 'Checking your session...' });
     await checkAuthStatus();
     await loadAutoSaveSetting();
+    await loadAutoInjectSetting();
 });
 
 // ============================================================================
@@ -1117,6 +1271,17 @@ async function loadAutoSaveSetting() {
         setState({ autoSaveEnabled: isEnabled });
     } catch (error) {
         console.error('[Popup] Error loading auto-save setting:', error);
+    }
+}
+
+async function loadAutoInjectSetting() {
+    try {
+        const result = await chrome.storage.local.get(['autoInjectEnabled']);
+        // Default to true if not set
+        const isEnabled = result.autoInjectEnabled !== false;
+        setState({ autoInjectEnabled: isEnabled });
+    } catch (error) {
+        console.error('[Popup] Error loading auto-inject setting:', error);
     }
 }
 
@@ -1229,6 +1394,58 @@ async function handleRevokeMcpKey(keyId) {
 }
 
 // ============================================================================
+// REFERRAL API FUNCTIONS
+// ============================================================================
+
+async function fetchReferralCode() {
+    if (!window.apiClient) return;
+    setState({ referralLoading: true });
+
+    try {
+        const result = await window.apiClient.makeAuthenticatedRequest(
+            `${window.apiClient.API_BASE_URL}/api/referral/code`,
+            { method: 'GET' }
+        );
+
+        if (result.code) {
+            setState({
+                referralCode: result.code,
+                referralStats: {
+                    totalReferrals: result.uses || 0,
+                    totalCreditsEarned: (result.uses || 0) * 50
+                },
+                referralLoading: false
+            });
+        } else {
+            setState({ referralLoading: false });
+        }
+    } catch (error) {
+        console.error('[Popup] Error fetching referral code:', error);
+        setState({ referralLoading: false });
+    }
+}
+
+function handleCopyReferralCode() {
+    if (!appState.referralCode) return;
+
+    navigator.clipboard.writeText(appState.referralCode).then(() => {
+        const copyBtn = document.getElementById('copy-referral-code-btn');
+        if (copyBtn) {
+            const originalHtml = copyBtn.innerHTML;
+            copyBtn.innerHTML = `${ICONS.checkCircle}`;
+            copyBtn.title = 'Copied!';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHtml;
+                copyBtn.title = 'Copy code';
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error('[Popup] Failed to copy referral code:', err);
+        alert('Failed to copy referral code');
+    });
+}
+
+// ============================================================================
 // ACTION HANDLERS
 // ============================================================================
 
@@ -1291,6 +1508,15 @@ async function handleAutoSaveToggle(isEnabled) {
         setState({ autoSaveEnabled: isEnabled });
     } catch (error) {
         console.error('[Popup] Error saving auto-save setting:', error);
+    }
+}
+
+async function handleAutoInjectToggle(isEnabled) {
+    try {
+        await chrome.storage.local.set({ autoInjectEnabled: isEnabled });
+        setState({ autoInjectEnabled: isEnabled });
+    } catch (error) {
+        console.error('[Popup] Error saving auto-inject setting:', error);
     }
 }
 
